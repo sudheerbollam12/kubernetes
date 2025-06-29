@@ -1,0 +1,24 @@
+# API version for Service objects
+apiVersion: v1
+
+# What type of Kubernetes object this is
+kind: Service
+
+# Metadata (information about this service)
+metadata:
+  name: hello-world-service     # Name of this service
+
+# The actual configuration
+spec:
+  # How to find the pods this service should send traffic to
+  selector:
+    app: hello-world            # Send traffic to pods with this label
+  
+  # Network ports configuration
+  ports:
+    - protocol: TCP             # Use TCP protocol
+      port: 80                  # External port (what users connect to)
+      targetPort: 80            # Internal port (what container listens on)
+  
+  # Type of service
+  type: LoadBalancer            # Creates external IP address for internet access

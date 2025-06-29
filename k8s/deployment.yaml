@@ -1,0 +1,48 @@
+# API version for Deployment objects
+apiVersion: apps/v1
+
+# What type of Kubernetes object this is
+kind: Deployment
+
+# Metadata (information about this deployment)
+metadata:
+  name: hello-world              # Name of this deployment
+  labels:
+    app: hello-world            # Label to identify this deployment
+
+# The actual configuration
+spec:
+  # How many copies (pods) of your app to run
+  replicas: 1                   # Start with 1 pod (can scale up later)
+  
+  # How to find the pods this deployment manages
+  selector:
+    matchLabels:
+      app: hello-world          # Manage pods with this label
+  
+  # Template for creating new pods
+  template:
+    # Labels for the pods that will be created
+    metadata:
+      labels:
+        app: hello-world        # Each pod gets this label
+    
+    # Pod specification (what's inside each pod)
+    spec:
+      containers:               # List of containers in the pod
+      - name: hello-world       # Container name
+        # Which Docker image to use (replace YOUR_PROJECT_ID with actual project)
+        image: gcr.io/YOUR_PROJECT_ID/hello-world:v1
+        ports:
+        - containerPort: 80     # Port the container listens on
+        
+        # Resource limits (important for cost control!)
+        resources:
+          # Minimum resources guaranteed to this container
+          requests:
+            memory: "32Mi"      # 32 Megabytes of RAM minimum
+            cpu: "50m"          # 50 millicores (0.05 CPU cores) minimum
+          # Maximum resources this container can use
+          limits:
+            memory: "64Mi"      # 64 Megabytes of RAM maximum
+            cpu: "100m"         # 100 millicores (0.1 CPU cores) maximum

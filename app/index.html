@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <!-- Page title that appears in browser tab -->
+    <title>Hello World K8s App</title>
+    
+    <!-- CSS styling to make it look nice -->
+    <style>
+        /* Center everything and add some spacing */
+        body { 
+            font-family: Arial;        /* Use Arial font */
+            text-align: center;       /* Center all text */
+            margin-top: 100px;        /* Add space from top */
+        }
+        /* Make the main heading blue (Google blue color) */
+        h1 { color: #4285f4; }
+    </style>
+</head>
+<body>
+    <!-- Main heading -->
+    <h1>Hello World from Kubernetes!</h1>
+    
+    <!-- Show which pod is serving this page -->
+    <!-- The hostname will be the pod name in Kubernetes -->
+    <p>Pod: <span id="hostname"></span></p>
+    
+    <!-- JavaScript to get the hostname and display it -->
+    <script>
+        // Get the browser's hostname and put it in the span
+        // In Kubernetes, this will show the pod name
+        document.getElementById('hostname').innerText = window.location.hostname;
+    </script>
+</body>
+</html>
