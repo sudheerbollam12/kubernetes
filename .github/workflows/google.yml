@@ -1,28 +1,13 @@
-# ==========================================
-# ISSUES WITH YOUR CURRENT WORKFLOW
-# ==========================================
-
-# ❌ Problem 1: branches: - '"main"' (extra quotes)
-# ❌ Problem 2: Uses Artifact Registry but you're using GCR
-# ❌ Problem 3: Uses Workload Identity (complex setup)
-# ❌ Problem 4: Uses Kustomize but you have simple YAML files
-# ❌ Problem 5: Builds from root directory, not app/ folder
-
-# ==========================================
-# SOLUTION: SIMPLIFIED WORKFLOW FOR YOUR SETUP
-# ==========================================
-
-# Replace your entire .github/workflows/deploy.yml file with this:
-
-name: 'Build and Deploy to GKE'
+name: 'Simple Deploy to GKE'
 
 on:
   push:
     branches: 
-      - main  # ✅ Fixed: removed extra quotes
+      - main
+  workflow_dispatch:
 
 env:
-  PROJECT_ID: 'GKE-Cluter-Learning'  # ❗ REPLACE WITH REAL PROJECT ID
+  PROJECT_ID: 'YOUR_ACTUAL_PROJECT_ID'
   GKE_CLUSTER: 'autopilot-cluster-1'
   GKE_ZONE: 'us-east4'
   DEPLOYMENT_NAME: 'hello-world'
@@ -30,122 +15,50 @@ env:
 
 jobs:
   deploy:
-    name: 'Build and Deploy'
-    runs-on: 'ubuntu-latest'
-
-    permissions:
-      contents: 'read'
-      id-token: 'write'
-
+    name: 'Build and Deploy to GKE'
+    runs-on: ubuntu-latest
+    
     steps:
       - name: 'Checkout code'
-        uses: 'actions/checkout@v4'
+        uses: actions/checkout@v4
 
-      # ✅ Simple authentication with service account key
       - name: 'Authenticate to Google Cloud'
-        uses: 'google-github-actions/auth@v2'
+        uses: google-github-actions/auth@v2
         with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      # ✅ Set up gcloud CLI
       - name: 'Set up Cloud SDK'
-        uses: 'google-github-actions/setup-gcloud@v2'
+        uses: google-github-actions/setup-gcloud@v2
 
-      # ✅ Configure Docker for GCR (not Artifact Registry)
-      - name: 'Configure Docker'
+      - name: 'Configure Docker for GCR'
         run: gcloud auth configure-docker
 
-      # ✅ Get GKE credentials
       - name: 'Get GKE credentials'
         run: |
-          gcloud container clusters get-credentials $GKE_CLUSTER \
-            --zone=$GKE_ZONE \
-            --project=$PROJECT_ID
+          gcloud container clusters get-credentials ${{ env.GKE_CLUSTER }} \
+            --zone=${{ env.GKE_ZONE }} \
+            --project=${{ env.PROJECT_ID }}
 
-      # ✅ Build Docker image from app/ directory
-      - name: 'Build and push Docker image'
+      - name: 'Build Docker image'
         run: |
           cd app
-          docker build -t gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA .
-          docker push gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE }}:${{ github.sha }} .
 
-      # ✅ Update deployment and apply to Kubernetes
+      - name: 'Push Docker image'
+        run: |
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: 'Update deployment file'
+        run: |
+          sed -i "s|gcr.io/.*/hello-world:.*|gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE }}:${{ github.sha }}|g" k8s/deployment.yaml
+
       - name: 'Deploy to GKE'
         run: |
-          # Update the image in deployment.yaml
-          sed -i "s|image:.*|image: gcr.io/$PROJECT_ID/$IMAGE:$GITHUB_SHA|g" k8s/deployment.yaml
-          
-          # Apply to Kubernetes
           kubectl apply -f k8s/deployment.yaml
           kubectl apply -f k8s/service.yaml
-          
-          # Wait for deployment to complete
-          kubectl rollout status deployment/$DEPLOYMENT_NAME
-          
-          # Show the results
+
+      - name: 'Verify deployment'
+        run: |
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
+          kubectl get services
           kubectl get pods
-          kubectl get services
-
-# ==========================================
-# WHAT YOU NEED TO DO NOW
-# ==========================================
-
-# Step 1: Get your actual project ID
-# Run this command: kubectl config current-context | cut -d_ -f2
-
-# Step 2: Replace 'YOUR_ACTUAL_PROJECT_ID' in the workflow above
-
-# Step 3: Create service account and GitHub secret
-# (I'll provide the commands below)
-
-# Step 4: Commit and push the updated workflow
-
-# ==========================================
-# ALTERNATIVE: EVEN SIMPLER VERSION
-# ==========================================
-
-# If you want the absolute simplest version:
-
-name: 'Simple Deploy to GKE'
-
-on:
-  push:
-    branches: [main]
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: 'Setup Google Cloud'
-        uses: 'google-github-actions/auth@v2'
-        with:
-          credentials_json: '${{ secrets.GCP_SA_KEY }}'
-          
-      - uses: 'google-github-actions/setup-gcloud@v2'
-        
-      - name: 'Configure kubectl'
-        run: |
-          gcloud container clusters get-credentials autopilot-cluster-1 \
-            --zone=us-east4 \
-            --project=YOUR_ACTUAL_PROJECT_ID
-        
-      - name: 'Build and Deploy'
-        run: |
-          # Get project ID
-          PROJECT_ID=YOUR_ACTUAL_PROJECT_ID
-          
-          # Configure Docker
-          gcloud auth configure-docker
-          
-          # Build and push
-          cd app
-          docker build -t gcr.io/$PROJECT_ID/hello-world:$GITHUB_SHA .
-          docker push gcr.io/$PROJECT_ID/hello-world:$GITHUB_SHA
-          
-          # Deploy
-          cd ..
-          sed -i "s|gcr.io/.*/hello-world:.*|gcr.io/$PROJECT_ID/hello-world:$GITHUB_SHA|g" k8s/deployment.yaml
-          kubectl apply -f k8s/
-          kubectl get services
