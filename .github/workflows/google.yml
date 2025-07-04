@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  PROJECT_ID: 'gke-cluster'
+  PROJECT_ID: 'gke-cluter'
   GKE_CLUSTER: 'autopilot-cluster-1'
   GKE_ZONE: 'us-east4'
   DEPLOYMENT_NAME: 'hello-world'
