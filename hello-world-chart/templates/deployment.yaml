@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "hello-world-chart.fullname" . }}  # ← Dynamic name
+  labels:
+    {{- include "hello-world-chart.labels" . | nindent 4 }}  # ← Dynamic labels
+spec:
+  replicas: {{ .Values.replicaCount }}  # ← From values.yaml
+  selector:
+    matchLabels:
+      {{- include "hello-world-chart.selectorLabels" . | nindent 6 }}  # ← Dynamic
+  template:
+    metadata:
+      labels:
+        {{- include "hello-world-chart.selectorLabels" . | nindent 8 }}  # ← Dynamic
+    spec:
+      containers:
+        - name: {{ .Chart.Name }}  # ← From Chart.yaml
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"  # ← From values.yaml
+          imagePullPolicy: {{ .Values.image.pullPolicy }}  # ← From values.yaml
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.targetPort }}  # ← Dynamic
+              protocol: TCP
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}  # ← Entire resources block from values.yaml

@@ -1,0 +1,42 @@
+apiVersion: v2
+name: hello-world-chart
+description: A Hello World application Helm chart for Kubernetes learning
+type: application
+
+# Chart version - increment this when you make changes to the chart
+version: 0.1.0
+
+# Application version - the version of the app this chart deploys
+appVersion: "1.0"
+
+# Keywords for chart discovery
+keywords:
+  - web
+  - hello-world
+  - nginx
+  - learning
+  - kubernetes
+
+# Home page URL
+home: https://github.com/sudheerbollam12/kubernetes
+
+# Source code URLs
+sources:
+  - https://github.com/sudheerbollam12/kubernetes
+
+# Chart maintainers
+maintainers:
+  - name: Sudheer Kumar Bollam
+    email: sudheer1450@gmail.com
+    url: https://github.com/sudheerbollam12
+
+# Minimum Kubernetes version required
+kubeVersion: ">=1.19.0"
+
+# Chart annotations (optional metadata)
+annotations:
+  category: Web Application
+  licenses: MIT
+  images: |
+    - name: hello-world
+      image: gcr.io/gke-cluter/hello-world:v1
