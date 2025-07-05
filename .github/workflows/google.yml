@@ -1,0 +1,64 @@
+name: 'Simple Deploy to GKE'
+
+on:
+  push:
+    branches: 
+      - main
+  workflow_dispatch:
+
+env:
+  PROJECT_ID: 'gke-cluter'
+  GKE_CLUSTER: 'autopilot-cluster-1'
+  GKE_ZONE: 'us-east4'
+  DEPLOYMENT_NAME: 'hello-world'
+  IMAGE: 'hello-world'
+
+jobs:
+  deploy:
+    name: 'Build and Deploy to GKE'
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 'Checkout code'
+        uses: actions/checkout@v4
+
+      - name: 'Authenticate to Google Cloud'
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: 'Set up Cloud SDK'
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: 'Configure Docker for GCR'
+        run: gcloud auth configure-docker
+
+      - name: 'Get GKE credentials'
+        uses: 'google-github-actions/get-gke-credentials@v2'
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      - name: 'Build Docker image'
+        run: |
+          cd app
+          docker build -t gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE }}:${{ github.sha }} .
+
+      - name: 'Push Docker image'
+        run: |
+          docker push gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE }}:${{ github.sha }}
+
+      - name: 'Update deployment file'
+        run: |
+          sed -i "s|gcr.io/.*/hello-world:.*|gcr.io/${{ env.PROJECT_ID }}/${{ env.IMAGE }}:${{ github.sha }}|g" k8s/deployment.yaml
+
+      - name: 'Deploy to GKE'
+        run: |
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: 'Verify deployment'
+        run: |
+          kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
+          kubectl get services
+          kubectl get pods
